@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Jarvis · Jorge Valdes</title>
+  <style>
+    :root {
+      --bg: #020712;
+      --bg-2: #041226;
+      --line: rgba(92, 188, 230, 0.38);
+      --line-strong: rgba(140, 224, 255, 0.72);
+      --cyan: #7adfff;
+      --cyan-2: #d7f6ff;
+      --text: #e7f6ff;
+      --muted: #b7d0e2;
+      --ok: #7dffc3;
+      --warn: #ffd089;
+      --bad: #ff8d98;
+      --sans: Inter, "Segoe UI", "Noto Sans", sans-serif;
+      --mono: "JetBrains Mono", "Cascadia Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: var(--sans);
+      background:
+        radial-gradient(900px 420px at 50% -10%, rgba(40, 140, 190, 0.16), transparent 60%),
+        linear-gradient(180deg, #03101f, var(--bg) 220px);
+      line-height: 1.4;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(90, 180, 220, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 180, 220, 0.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at 50% 20%, #000, transparent 75%);
+    }
+    .scan {
+      position: fixed;
+      left: 0; right: 0;
+      height: 22vh;
+      top: -22vh;
+      pointer-events: none;
+      background: linear-gradient(to bottom, transparent, rgba(120, 220, 255, 0.05), transparent);
+      animation: scan 14s linear infinite;
+    }
+    @keyframes scan { to { transform: translateY(130vh); } }
+
+    .wrap { width: min(1360px, calc(100% - 24px)); margin: 0 auto; padding: 12px 0 28px; position: relative; }
+
+    .command {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      display: grid;
+      grid-template-columns: auto minmax(160px, 1fr) auto auto;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      background: rgba(3, 12, 24, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), inset 0 0 24px rgba(40, 140, 190, 0.05);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .diamond {
+      width: 12px; height: 12px;
+      border: 1.5px solid var(--cyan);
+      transform: rotate(45deg);
+      box-shadow: 0 0 10px rgba(122, 223, 255, 0.85);
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.22em;
+      font-weight: 600;
+    }
+    .hello { margin: 0; color: var(--muted); font-size: 14px; }
+    .hello strong { color: var(--cyan-2); font-weight: 600; }
+    .nav { display: flex; gap: 4px; }
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 8px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+    }
+    .nav a:hover, .nav a.is-on {
+      color: var(--cyan-2);
+      border-color: var(--line-strong);
+      background: rgba(80, 180, 220, 0.12);
+      box-shadow: 0 0 16px rgba(80, 190, 230, 0.18);
+    }
+    .clockbox { text-align: right; }
+    .clockbox p { margin: 0; }
+    .date-line { color: var(--muted); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+    .clock { font-family: var(--mono); font-size: 20px; letter-spacing: 0.04em; color: var(--cyan-2); text-shadow: 0 0 12px rgba(122, 223, 255, 0.45); }
+
+    .telemetry {
+      display: grid;
+      grid-template-columns: auto auto minmax(140px, 1fr) auto minmax(280px, 1.3fr);
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      scroll-margin-top: 74px;
+    }
+    .wx-read { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .wx-temp { margin: 0; font-family: var(--mono); font-size: 28px; line-height: 1; }
+    .wx-temp span { font-size: 14px; color: var(--muted); }
+    .mini-ring { width: 58px; height: 58px; flex: none; }
+    .mini-ring circle { fill: none; stroke-width: 4; }
+    .mini-ring .track { stroke: rgba(140, 200, 230, 0.18); }
+    .mini-ring .ticks { stroke: rgba(122, 223, 255, 0.45); stroke-width: 2; stroke-dasharray: 1.2 4; }
+    .mini-ring .value { stroke: var(--cyan); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 32px 32px; filter: drop-shadow(0 0 4px rgba(122, 223, 255, 0.7)); }
+    .hourly { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: end; }
+    .hour { text-align: center; min-width: 0; }
+    .hour .col {
+      height: 42px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .hour .bar {
+      width: 100%;
+      max-width: 18px;
+      height: 20%;
+      border-radius: 3px 3px 0 0;
+      background: linear-gradient(180deg, #d7f6ff, #1f8eb4);
+      box-shadow: 0 0 8px rgba(80, 190, 230, 0.35);
+    }
+    .hour.wet .bar { background: linear-gradient(180deg, #ffd089, #1f8eb4 55%); }
+    .hour p { margin: 2px 0 0; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hour .t { font-family: var(--mono); color: var(--text); }
+
+    .stage {
+      display: grid;
+      grid-template-columns: 210px minmax(0, 1.15fr) minmax(0, 0.9fr) 240px;
+      grid-template-areas:
+        "sistema cuentas lyft eventos"
+        "voz calendario pagos avisos"
+        "clipping clipping bots bots";
+      gap: 10px;
+      align-items: start;
+    }
+    #sistema { grid-area: sistema; }
+    #voz { grid-area: voz; }
+    #cuentas { grid-area: cuentas; }
+    #lyft { grid-area: lyft; }
+    #calendario { grid-area: calendario; }
+    #pagos { grid-area: pagos; }
+    #clipping { grid-area: clipping; }
+    #bots { grid-area: bots; }
+    #eventos { grid-area: eventos; }
+    #avisos { grid-area: avisos; }
+    .panel, #tablero { scroll-margin-top: 78px; }
+    .panel {
+      position: relative;
+      padding: 12px;
+      background: linear-gradient(180deg, rgba(18, 58, 88, 0.28), rgba(4, 16, 32, 0.78) 42px);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: inset 0 0 30px rgba(40, 130, 180, 0.05);
+      animation: rise 0.7s cubic-bezier(.2, .7, .2, 1) both;
+      animation-delay: var(--d, 0s);
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .panel:hover {
+      border-color: var(--line-strong);
+      box-shadow: inset 0 0 30px rgba(40, 130, 180, 0.08), 0 0 22px rgba(40, 160, 210, 0.16);
+    }
+    .panel::before, .panel::after {
+      content: "";
+      position: absolute;
+      width: 8px; height: 8px;
+      pointer-events: none;
+    }
+    .panel::before { top: 5px; left: 5px; border-top: 1px solid var(--cyan); border-left: 1px solid var(--cyan); }
+    .panel::after { right: 5px; bottom: 5px; border-right: 1px solid rgba(122, 223, 255, 0.45); border-bottom: 1px solid rgba(122, 223, 255, 0.45); }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+    .hd { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+    h2, h3 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 6px; height: 6px;
+      margin-right: 8px;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      vertical-align: 1px;
+    }
+    .count, .loc { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .sub { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+    .label { margin: 0; font-size: 15px; font-weight: 600; }
+    .week { margin: -2px 0 8px; color: var(--muted); font-size: 13px; }
+
+    .account, .pay, .bot, .sys, .event, .notice {
+      display: grid;
+      gap: 4px 10px;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid rgba(120, 190, 220, 0.16);
+    }
+    .account { grid-template-columns: auto 1fr auto; }
+    .pay { grid-template-columns: minmax(0, 1fr) auto; }
+    .pay > div:last-child, .event > div:last-child { text-align: right; }
+    .bot, .sys { grid-template-columns: auto minmax(0, 1fr) auto; }
+    .event { grid-template-columns: auto minmax(0, 1fr); }
+    .notice { grid-template-columns: auto minmax(0, 1fr); }
+    .mark {
+      width: 28px; height: 28px;
+      display: grid; place-items: center;
+      border: 1px solid rgba(122, 223, 255, 0.45);
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--cyan-2);
+    }
+    .money { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 16px; white-space: nowrap; }
+    .total {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-top: 6px; padding: 10px 12px;
+      border: 1px solid rgba(122, 223, 255, 0.45);
+      background: rgba(80, 180, 220, 0.08);
+      border-radius: 6px;
+    }
+    .total span { letter-spacing: 0.16em; text-transform: uppercase; font-size: 12px; color: var(--cyan); }
+    .total strong { font-family: var(--mono); font-size: 26px; font-weight: 600; color: white; }
+
+    .lyft-body { display: grid; grid-template-columns: 148px 1fr; gap: 10px; align-items: center; }
+    .ring { width: 148px; height: 148px; }
+    .ring circle { fill: none; }
+    .ring .ticks { stroke: rgba(122, 223, 255, 0.4); stroke-width: 2; stroke-dasharray: 1.4 5.2; }
+    .ring .track { stroke: rgba(140, 200, 230, 0.16); stroke-width: 8; }
+    .ring .value {
+      stroke: url(#lyftGrad);
+      stroke-width: 8;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: 60px 60px;
+      filter: drop-shadow(0 0 6px rgba(122, 223, 255, 0.65));
+    }
+    .ring text { fill: var(--text); font-family: var(--mono); font-size: 20px; text-anchor: middle; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .stat { padding: 7px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(120, 190, 220, 0.14); }
+    .stat p { margin: 0; }
+    .stat .sub { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .stat .money { font-size: 15px; margin-top: 3px; }
+    .meter { height: 6px; margin-top: 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+    .meter span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #146f92, #7adfff 70%, #d7f6ff); box-shadow: 0 0 10px rgba(122, 223, 255, 0.55); }
+    .flag { margin: 8px 0 0; color: var(--warn); font-size: 12px; letter-spacing: 0.04em; }
+
+    .cal { width: 100%; border-collapse: separate; border-spacing: 3px; table-layout: fixed; }
+    .cal th { color: var(--muted); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; padding-bottom: 2px; }
+    .cal td {
+      height: 48px; padding: 3px 4px; vertical-align: top; overflow: hidden;
+      border-radius: 4px; border: 1px solid transparent; background: rgba(255, 255, 255, 0.025);
+    }
+    .cal td.pad { background: transparent; }
+    .cal td.is-today { border-color: var(--cyan); box-shadow: inset 0 0 12px rgba(122, 223, 255, 0.16); }
+    .cal td.has-pay { border-color: rgba(122, 223, 255, 0.55); background: rgba(80, 180, 220, 0.1); }
+    .daynum { display: block; font-family: var(--mono); font-size: 12px; }
+    .daytag, .daypay { display: block; margin-top: 1px; font-size: 10px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .daytag { color: var(--cyan-2); letter-spacing: 0.06em; text-transform: uppercase; }
+    .daypay { color: var(--cyan); }
+
+    .clip-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px; }
+    .pill {
+      display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 99px;
+      font-size: 11px; letter-spacing: 0.04em; text-transform: capitalize; border: 1px solid transparent;
+    }
+    .pill.warn { color: var(--warn); border-color: rgba(255, 208, 137, 0.45); background: rgba(255, 208, 137, 0.08); }
+    .pill.info { color: var(--cyan-2); border-color: rgba(122, 223, 255, 0.4); background: rgba(122, 223, 255, 0.08); }
+    .pill.bad { color: var(--bad); border-color: rgba(255, 141, 152, 0.5); background: rgba(255, 141, 152, 0.1); }
+    .pill.neutral { color: var(--muted); border-color: rgba(160, 200, 220, 0.3); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+    .dot.run, .dot.active { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+    .dot.idle { background: var(--warn); box-shadow: 0 0 8px var(--warn); animation: none; }
+    .dot.err { background: var(--bad); box-shadow: 0 0 8px var(--bad); }
+    .dot.pulse { animation: glow 2.4s ease-in-out infinite; }
+    @keyframes glow { 50% { opacity: 0.45; } }
+    .state { margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+    .state.run, .state.active { color: var(--ok); }
+    .state.idle { color: var(--warn); }
+    .state.err { color: var(--bad); }
+    .state.info { color: var(--cyan); }
+    .when { font-family: var(--mono); font-size: 12px; color: var(--cyan); }
+    .sold { color: var(--bad); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    .wave { display: flex; align-items: flex-end; gap: 3px; height: 72px; margin-top: 8px; }
+    .wave i {
+      display: block; flex: 1; height: calc(var(--h) * 100%);
+      background: linear-gradient(180deg, #e8fbff, #1c86ad);
+      border-radius: 2px 2px 0 0;
+      transform-origin: bottom;
+      animation: wave 2.4s ease-in-out infinite;
+      animation-delay: calc(var(--i) * 0.06s);
+      box-shadow: 0 0 8px rgba(80, 190, 230, 0.25);
+    }
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.55); }
+      50% { transform: scaleY(1); }
+    }
+
+    .note { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+    .error { padding: 16px; border: 1px solid rgba(255, 141, 152, 0.6); border-radius: 8px; }
+    .error code { font-family: var(--mono); color: var(--warn); }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;
+    }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    @media (max-width: 1100px) {
+      .command { grid-template-columns: 1fr auto; }
+      .hello { grid-column: 1 / -1; }
+      .nav { grid-column: 1 / -1; overflow-x: auto; }
+      .telemetry { grid-template-columns: 1fr; }
+      .stage { display: flex; flex-direction: column; }
+      #cuentas { order: 1; }
+      #lyft { order: 2; }
+      #calendario { order: 3; }
+      #pagos { order: 4; }
+      #clipping { order: 5; }
+      #bots { order: 6; }
+      #sistema { order: 7; }
+      #voz { order: 8; }
+      #eventos { order: 9; }
+      #avisos { order: 10; }
+    }
+    @media (max-width: 720px) {
+      .wrap { width: min(100% - 16px, 1360px); }
+      .lyft-body { grid-template-columns: 1fr; justify-items: center; }
+      .clock { font-size: 16px; }
+      .hourly { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .scan, .panel, .dot.pulse, .wave i { animation: none; }
+      .ring .value, .mini-ring .value { filter: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scan" aria-hidden="true"></div>
+  <div class="wrap">
+    <header class="command">
+      <div class="brand">
+        <span class="diamond" aria-hidden="true"></span>
+        <h1>Jarvis</h1>
+      </div>
+      <p class="hello" id="hello">Buenos días, señor — <strong>Jorge</strong></p>
+      <nav class="nav" aria-label="Secciones">
+        <a href="#tablero" class="is-on" data-nav="tablero">Resumen</a>
+        <a href="#pagos" data-nav="pagos">Pagos</a>
+        <a href="#lyft" data-nav="lyft">Lyft</a>
+        <a href="#clima" data-nav="clima">Clima</a>
+        <a href="#eventos" data-nav="eventos">Eventos</a>
+        <a href="#voz" data-nav="voz">Voz</a>
+      </nav>
+      <div class="clockbox">
+        <p class="date-line" id="date-line"></p>
+        <p class="clock" id="clock" aria-hidden="true"></p>
+      </div>
+    </header>
+    <p class="sr-only" id="load-status" role="status"></p>
+    <main id="app" aria-busy="true"><p class="panel">Cargando datos…</p></main>
+  </div>
+  <script>
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const stateCopy = {
+      running: ["En marcha", "run"],
+      active: ["Activo", "active"],
+      idle: ["En espera", "idle"],
+      error: ["Error", "err"],
+      info: ["", "info"]
+    };
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+    function money(amount, currency) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency", currency: currency || "USD", currencyDisplay: "narrowSymbol"
+      }).format(Number(amount) || 0);
+    }
+    function dueDate(iso) {
+      const date = new Date(`${iso}T12:00:00`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    function dueLabel(iso) {
+      const date = dueDate(iso);
+      if (!date) return esc(iso);
+      const pretty = new Intl.DateTimeFormat("es", { day: "numeric", month: "short" }).format(date);
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      const days = Math.round((date - today) / 86400000);
+      let rel = `en ${days} días`;
+      if (days === 0) rel = "hoy";
+      else if (days === 1) rel = "mañana";
+      else if (days === -1) rel = "ayer";
+      else if (days < 0) rel = `hace ${Math.abs(days)} días`;
+      return `${pretty} · ${rel}`;
+    }
+    function pillFor(payment) {
+      const date = dueDate(payment.due);
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      if (date) {
+        const days = Math.round((date - today) / 86400000);
+        if (days === 0) return ["hoy", "warn"];
+        if (days < 0) return ["vencido", "bad"];
+      }
+      const s = String(payment.status || "").toLowerCase();
+      if (s.includes("program") || s.includes("pagad")) return [payment.status, "info"];
+      if (s.includes("pend")) return [payment.status, "warn"];
+      if (s.includes("error") || s.includes("venc")) return [payment.status || "vencido", "bad"];
+      return [payment.status || "sin estado", "neutral"];
+    }
+    function countTo(el, target, format) {
+      if (!el) return;
+      if (reduceMotion) { el.textContent = format(target); return; }
+      const start = performance.now();
+      function frame(now) {
+        const t = Math.min(1, (now - start) / 900);
+        el.textContent = format(target * (1 - Math.pow(1 - t, 3)));
+        if (t < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+    function botRow(bot) {
+      const key = String(bot.state || "").toLowerCase();
+      const [label, cls] = stateCopy[key] || [bot.state || "Sin estado", "idle"];
+      return `<article class="bot">
+        <span class="dot ${esc(cls)} ${key === "running" || key === "active" ? "pulse" : ""}" aria-hidden="true"></span>
+        <div><p class="label">${esc(bot.name)}</p><p class="sub">${esc(bot.detail || "")}</p></div>
+        <p class="state ${esc(cls)}">${esc(label || bot.detail || "")}</p>
+      </article>`;
+    }
+    function calendarHtml(payments) {
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const pad = (new Date(year, month, 1).getDay() + 6) % 7;
+      const days = new Date(year, month + 1, 0).getDate();
+      const byDay = new Map();
+      payments.forEach((payment) => {
+        const date = dueDate(payment.due);
+        if (!date || date.getFullYear() !== year || date.getMonth() !== month) return;
+        const day = date.getDate();
+        if (!byDay.has(day)) byDay.set(day, []);
+        byDay.get(day).push(payment);
+      });
+      const monthName = new Intl.DateTimeFormat("es", { month: "long", year: "numeric" }).format(today);
+      const heads = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"].map((n) => `<th scope="col">${n}</th>`).join("");
+      const cells = Array.from({ length: pad }, () => '<td class="pad"></td>');
+      for (let day = 1; day <= days; day += 1) {
+        const isToday = day === today.getDate();
+        const items = byDay.get(day) || [];
+        const extra = items.length > 1 ? ` +${items.length - 1}` : "";
+        const label = [day + " de " + monthName, isToday ? "hoy" : "", items.map((i) => i.name).join(", ")].filter(Boolean).join(", ");
+        cells.push(`<td class="${isToday ? "is-today" : ""} ${items.length ? "has-pay" : ""}" ${items.length || isToday ? `aria-label="${esc(label)}"` : ""}>
+          <span class="daynum">${day}</span>
+          ${isToday ? '<span class="daytag">hoy</span>' : ""}
+          ${items.length ? `<span class="daypay">${esc(items[0].name)}${esc(extra)}</span>` : ""}
+        </td>`);
+      }
+      while (cells.length % 7) cells.push('<td class="pad"></td>');
+      const rows = [];
+      for (let i = 0; i < cells.length; i += 7) rows.push(`<tr>${cells.slice(i, i + 7).join("")}</tr>`);
+      return `<p class="week">${esc(monthName)}</p>
+        <table class="cal"><caption class="sr-only">Calendario de ${esc(monthName)}</caption>
+        <thead><tr>${heads}</tr></thead><tbody>${rows.join("")}</tbody></table>`;
+    }
+    function gauge(id, ratio, size) {
+      const c = 2 * Math.PI * (size === "mini" ? 24 : 46);
+      const cls = size === "mini" ? "mini-ring" : "ring";
+      const vb = size === "mini" ? "0 0 64 64" : "0 0 120 120";
+      const mid = size === "mini" ? 32 : 60;
+      const tickR = size === "mini" ? 29 : 54;
+      const text = size === "mini" ? "" : `<text id="pct" x="60" y="66">0%</text>`;
+      return `<svg class="${cls}" viewBox="${vb}" aria-hidden="true">
+        ${size === "lyft" ? `<defs><linearGradient id="lyftGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#146f92"/><stop offset="70%" stop-color="#7adfff"/><stop offset="100%" stop-color="#e8fbff"/></linearGradient></defs>` : ""}
+        <circle class="ticks" cx="${mid}" cy="${mid}" r="${tickR}"></circle>
+        <circle class="track" cx="${mid}" cy="${mid}" r="${size === "mini" ? 24 : 46}"></circle>
+        <circle class="value" id="${id}" cx="${mid}" cy="${mid}" r="${size === "mini" ? 24 : 46}" stroke-dasharray="${c}" stroke-dashoffset="${c}"></circle>
+        ${text}
+      </svg>`;
+    }
+
+    function render(data) {
+      const owner = data.owner || "Jorge Valdes";
+      const first = owner.split(" ")[0] || owner;
+      const hour = new Date().getHours();
+      const greet = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
+      document.getElementById("hello").innerHTML = `${greet}, señor — <strong>${esc(first)}</strong>`;
+
+      const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+      const payments = (Array.isArray(data.payments) ? data.payments : []).slice().sort((a, b) => String(a.due).localeCompare(String(b.due)));
+      const goal = data.lyftGoal || {};
+      const clipping = data.clipping || {};
+      const currency = accounts[0]?.currency || "USD";
+      const total = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+      const target = Number(goal.target) || 0;
+      const current = Number(goal.current) || 0;
+      const minimum = Number(goal.minimum) || 0;
+      const remaining = Math.max(0, target - current);
+      const shown = target > 0 ? Math.max(0, Math.min(1, current / target)) : 0;
+      const wx = data.weather || {};
+      const hourly = Array.isArray(wx.hourly) ? wx.hourly : [];
+      const temps = hourly.map((h) => Number(h.temp) || 0);
+      const tMin = Math.min(60, ...temps, Number(wx.low) || 60);
+      const tMax = Math.max(95, ...temps, Number(wx.high) || 90);
+      const wxRatio = Math.max(0, Math.min(1, ((Number(wx.temp) || 0) - 50) / 60));
+      const systems = Array.isArray(data.systems) ? data.systems : [];
+      const voice = data.voice || { levels: [] };
+      const events = Array.isArray(data.events) ? data.events : [];
+      const notices = Array.isArray(data.notices) ? data.notices : [];
+      const bots = Array.isArray(data.bots) ? data.bots : [];
+      const clipBots = Array.isArray(clipping.bots) ? clipping.bots : [];
+
+      const accountHtml = accounts.map((a) => `<article class="account">
+        <div class="mark" aria-hidden="true">${esc((a.name || "?").slice(0, 1))}</div>
+        <div><p class="label">${esc(a.name)}</p><p class="sub">${esc(a.detail || "")}</p></div>
+        <p class="money" data-count="${Number(a.balance) || 0}" data-currency="${esc(a.currency || currency)}">$0</p>
+      </article>`).join("");
+
+      const payHtml = payments.map((p) => {
+        const [label, cls] = pillFor(p);
+        return `<article class="pay">
+          <div><p class="label">${esc(p.name)}</p><p class="sub">${dueLabel(p.due)}</p></div>
+          <div>
+            <p class="money" data-count="${Number(p.amount) || 0}" data-currency="${esc(p.currency || currency)}">$0</p>
+            <p class="pill ${cls}">${esc(label)}</p>
+          </div>
+        </article>`;
+      }).join("");
+
+      const hours = hourly.map((h) => {
+        const span = tMax - tMin || 1;
+        const pct = Math.max(12, ((Number(h.temp) || 0) - tMin) / span * 100);
+        return `<div class="hour ${Number(h.rain) > 0 ? "wet" : ""}" title="${esc(h.condition || "")}">
+          <div class="col"><i class="bar" data-h="${pct}"></i></div>
+          <p class="t">${esc(h.temp)}°</p>
+          <p>${esc(h.time)}</p>
+          <p>${esc(h.condition)}${Number(h.rain) ? ` ${esc(h.rain)}%` : ""}</p>
+        </div>`;
+      }).join("");
+
+      const levels = Array.isArray(voice.levels) && voice.levels.length ? voice.levels : [0.4, 0.7, 0.5, 0.8];
+      const wave = levels.map((n, i) => `<i style="--h:${Math.max(0.15, Math.min(1, Number(n) || 0))};--i:${i}"></i>`).join("");
+
+      document.getElementById("app").innerHTML = `
+        <section class="panel telemetry" id="clima" style="--d:.02s" aria-labelledby="clima-title">
+          <div>
+            <h2 id="clima-title">Clima</h2>
+            <p class="loc">${esc(wx.city || "Las Vegas")} · ${esc(wx.latitude)}°N ${esc(Math.abs(wx.longitude))}°W</p>
+          </div>
+          <div class="wx-read">
+            ${gauge("wx-ring", wxRatio, "mini")}
+            <p class="wx-temp"><span id="wx-temp">0</span><span>°${esc(wx.unit || "F")}</span></p>
+          </div>
+          <div>
+            <p class="label">${esc(wx.condition || "")}</p>
+            <p class="sub">Máx <span id="wx-high">0</span>° · Mín <span id="wx-low">0</span>°</p>
+          </div>
+          <div>
+            <p class="sub">Lluvia ${esc(wx.rainWhen || "")}</p>
+            <p class="money"><span id="wx-rain">0</span>%</p>
+          </div>
+          <div class="hourly" aria-label="Pronóstico por hora">${hours}</div>
+        </section>
+        <div class="stage" id="tablero">
+            <section class="panel" id="sistema" style="--d:.08s" aria-labelledby="sys-title">
+              <div class="hd"><h2 id="sys-title">Estado del sistema</h2></div>
+              ${systems.map((s) => {
+                const key = String(s.state || "info").toLowerCase();
+                const [label, cls] = stateCopy[key] || [s.detail, "info"];
+                return `<article class="sys">
+                  <span class="dot ${esc(cls)} ${key === "active" ? "pulse" : ""}" aria-hidden="true"></span>
+                  <p class="label">${esc(s.name)}</p>
+                  <p class="state ${esc(cls)}">${esc(s.detail || label)}</p>
+                </article>`;
+              }).join("") || "<p class='sub'>Sin señales.</p>"}
+            </section>
+            <section class="panel" id="voz" style="--d:.16s" aria-labelledby="voz-title">
+              <div class="hd"><h2 id="voz-title">${esc(voice.label || "Voz")}</h2><span class="count">${esc(voice.locale || "")}</span></div>
+              <div class="wave" aria-hidden="true">${wave}</div>
+            </section>
+            <section class="panel" id="cuentas" style="--d:.05s" aria-labelledby="cuentas-title">
+              <div class="hd"><h2 id="cuentas-title">Cuentas</h2><span class="count">${accounts.length}</span></div>
+              ${accountHtml || "<p class='sub'>No hay cuentas.</p>"}
+              <div class="total"><span>Total</span><strong id="total" data-count="${total}" data-currency="${esc(currency)}">$0</strong></div>
+            </section>
+            <section class="panel" id="lyft" style="--d:.1s" aria-labelledby="lyft-title">
+              <div class="hd"><h2 id="lyft-title">Panel de Lyft</h2></div>
+              <p class="week">${esc(goal.weekLabel || "")}</p>
+              <div class="lyft-body">
+                ${gauge("lyft-ring", shown, "lyft")}
+                <div class="stats">
+                  <div class="stat"><p class="sub">Objetivo</p><p class="money" data-count="${target}" data-currency="${esc(goal.currency || currency)}">$0</p></div>
+                  <div class="stat"><p class="sub">Mínimo</p><p class="money" data-count="${minimum}" data-currency="${esc(goal.currency || currency)}">$0</p></div>
+                  <div class="stat"><p class="sub">Avance</p><p class="money" data-count="${current}" data-currency="${esc(goal.currency || currency)}">$0</p></div>
+                  <div class="stat"><p class="sub">Restante</p><p class="money" data-count="${remaining}" data-currency="${esc(goal.currency || currency)}">$0</p></div>
+                </div>
+              </div>
+              <div class="meter" aria-hidden="true"><span id="meter-fill"></span></div>
+              <progress class="sr-only" id="lyft-bar" max="${target || 1}" value="${current}">${Math.round(shown * 100)}%</progress>
+              ${current < minimum ? `<p class="flag">Avance bajo el mínimo de la semana</p>` : ""}
+            </section>
+            <section class="panel" id="calendario" style="--d:.14s" aria-labelledby="cal-title">
+              <div class="hd"><h2 id="cal-title">Calendario de pagos</h2></div>
+              ${calendarHtml(payments)}
+            </section>
+            <section class="panel" id="pagos" style="--d:.18s" aria-labelledby="pay-title">
+              <div class="hd"><h2 id="pay-title">Pagos próximos</h2><span class="count">${payments.length}</span></div>
+              ${payHtml || "<p class='sub'>No hay pagos.</p>"}
+            </section>
+            <section class="panel" id="clipping" style="--d:.22s" aria-labelledby="clip-title">
+              <div class="hd"><h2 id="clip-title">Panel de clipping</h2></div>
+              <p class="week">${esc(clipping.weekLabel || "")}</p>
+              <div class="clip-stats">
+                <div class="stat"><p class="sub">Clips de la semana</p><p class="money" data-int="${Number(clipping.clipsThisWeek) || 0}">0</p></div>
+                <div class="stat"><p class="sub">En cola</p><p class="money" data-int="${Number(clipping.inQueue) || 0}">0</p></div>
+                <div class="stat"><p class="sub">Publicados</p><p class="money" data-int="${Number(clipping.published) || 0}">0</p></div>
+                <div class="stat"><p class="sub">Ganancias</p><p class="money" data-count="${Number(clipping.earnings) || 0}" data-currency="${esc(clipping.currency || currency)}">$0</p></div>
+              </div>
+              <h3>Bots de clipping</h3>
+              ${clipBots.map(botRow).join("") || "<p class='sub'>Sin bots de clipping.</p>"}
+            </section>
+            <section class="panel" id="bots" style="--d:.26s" aria-labelledby="bots-title">
+              <div class="hd"><h2 id="bots-title">Estado de los bots</h2></div>
+              ${bots.map(botRow).join("") || "<p class='sub'>Sin bots.</p>"}
+            </section>
+            <section class="panel" id="eventos" style="--d:.12s" aria-labelledby="ev-title">
+              <div class="hd"><h2 id="ev-title">Eventos de hoy</h2></div>
+              <p class="week">${esc(wx.city || "Las Vegas")}</p>
+              ${events.map((ev) => `<article class="event">
+                <p class="when">${esc(ev.time)}</p>
+                <div>
+                  <p class="label">${esc(ev.title)} ${ev.note ? `<span class="sold">${esc(ev.note)}</span>` : ""}</p>
+                  <p class="sub">${esc(ev.place || "")}</p>
+                </div>
+              </article>`).join("") || "<p class='sub'>Sin eventos.</p>"}
+            </section>
+            <section class="panel" id="avisos" style="--d:.2s" aria-labelledby="av-title">
+              <div class="hd"><h2 id="av-title">Avisos</h2></div>
+              ${notices.map((n) => `<article class="notice">
+                <span class="dot ${n.tone === "weather" ? "idle" : "pulse"}" aria-hidden="true"></span>
+                <p class="label">${esc(n.text)}</p>
+              </article>`).join("") || "<p class='sub'>Sin avisos.</p>"}
+            </section>
+        </div>
+        <p class="note">${esc(data.disclaimer || "Cifras de muestra.")}</p>`;
+
+      document.getElementById("app").setAttribute("aria-busy", "false");
+      document.getElementById("load-status").textContent = "Tablero actualizado con datos de muestra.";
+      document.querySelectorAll("[data-count]").forEach((el) => countTo(el, Number(el.dataset.count) || 0, (n) => money(n, el.dataset.currency)));
+      document.querySelectorAll("[data-int]").forEach((el) => countTo(el, Number(el.dataset.int) || 0, (n) => String(Math.round(n))));
+      countTo(document.getElementById("pct"), shown * 100, (n) => `${Math.round(n)}%`);
+      countTo(document.getElementById("wx-temp"), Number(wx.temp) || 0, (n) => String(Math.round(n)));
+      countTo(document.getElementById("wx-high"), Number(wx.high) || 0, (n) => String(Math.round(n)));
+      countTo(document.getElementById("wx-low"), Number(wx.low) || 0, (n) => String(Math.round(n)));
+      countTo(document.getElementById("wx-rain"), Number(wx.rainChance) || 0, (n) => String(Math.round(n)));
+
+      const bar = document.getElementById("lyft-bar");
+      bar.setAttribute("aria-label", "Avance de la meta semanal de Lyft");
+      bar.setAttribute("aria-valuemin", "0");
+      bar.setAttribute("aria-valuemax", String(target));
+      bar.setAttribute("aria-valuenow", String(current));
+      const sweep = (id, ratio, radius) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const length = 2 * Math.PI * radius;
+        const offset = length * (1 - ratio);
+        if (reduceMotion) el.style.strokeDashoffset = String(offset);
+        else requestAnimationFrame(() => {
+          el.style.transition = "stroke-dashoffset 1.15s cubic-bezier(.2,.7,.2,1)";
+          el.style.strokeDashoffset = String(offset);
+        });
+      };
+      sweep("lyft-ring", shown, 46);
+      sweep("wx-ring", wxRatio, 24);
+      const fill = document.getElementById("meter-fill");
+      document.querySelectorAll(".hour .bar").forEach((el) => {
+        const h = el.getAttribute("data-h") || "0";
+        if (reduceMotion) el.style.height = h + "%";
+        else requestAnimationFrame(() => {
+          el.style.transition = "height 1s cubic-bezier(.2,.7,.2,1)";
+          el.style.height = h + "%";
+        });
+      });
+      if (reduceMotion) fill.style.width = (shown * 100) + "%";
+      else requestAnimationFrame(() => {
+        fill.style.transition = "width 1.15s cubic-bezier(.2,.7,.2,1)";
+        fill.style.width = (shown * 100) + "%";
+      });
+    }
+
+    function showError(message) {
+      document.getElementById("app").innerHTML = `<div class="error" role="alert"><p class="label">No se pudo cargar data.json</p><p class="sub">${esc(message)}</p><p class="sub">Sirve esta carpeta por HTTP, por ejemplo <code>python3 -m http.server</code></p></div>`;
+      document.getElementById("app").setAttribute("aria-busy", "false");
+    }
+    function tickClock() {
+      const now = new Date();
+      document.getElementById("date-line").textContent = new Intl.DateTimeFormat("es", { weekday: "long", day: "numeric", month: "long" }).format(now);
+      document.getElementById("clock").textContent = new Intl.DateTimeFormat("es", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(now);
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+    document.querySelectorAll(".nav a").forEach((link) => {
+      link.addEventListener("click", () => {
+        document.querySelectorAll(".nav a").forEach((a) => a.classList.remove("is-on"));
+        link.classList.add("is-on");
+      });
+    });
+
+    fetch("./data.json", { cache: "no-store" })
+      .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
+      .then(render)
+      .catch((error) => showError(error.message || "Error de red"));
+  </script>
+</body>
+</html>

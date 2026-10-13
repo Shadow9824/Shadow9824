@@ -1,0 +1,171 @@
+{
+  "owner": "Jorge Valdes",
+  "disclaimer": "Cifras de muestra. Los saldos, pagos, Lyft, clipping, clima y eventos no están verificados. Edita data.json para actualizarlos.",
+  "accounts": [
+    {
+      "name": "Chase",
+      "balance": 1840.22,
+      "currency": "USD",
+      "detail": "Cuenta bancaria"
+    },
+    {
+      "name": "Lyft Direct",
+      "balance": 536.75,
+      "currency": "USD",
+      "detail": "Depósito directo"
+    },
+    {
+      "name": "Efectivo",
+      "balance": 120,
+      "currency": "USD",
+      "detail": "En mano"
+    }
+  ],
+  "payments": [
+    {
+      "name": "Tesla (Lyft Direct)",
+      "amount": 117.28,
+      "currency": "USD",
+      "due": "2026-10-13",
+      "status": "pendiente"
+    },
+    {
+      "name": "Tarjeta padrastro",
+      "amount": 193,
+      "currency": "USD",
+      "due": "2026-10-14",
+      "status": "pendiente"
+    },
+    {
+      "name": "Renta",
+      "amount": 1450,
+      "currency": "USD",
+      "due": "2026-10-15",
+      "status": "pendiente"
+    },
+    {
+      "name": "Teléfono",
+      "amount": 72.5,
+      "currency": "USD",
+      "due": "2026-10-18",
+      "status": "programado"
+    },
+    {
+      "name": "Seguro del auto",
+      "amount": 186.4,
+      "currency": "USD",
+      "due": "2026-10-21",
+      "status": "pendiente"
+    },
+    {
+      "name": "Internet",
+      "amount": 64.99,
+      "currency": "USD",
+      "due": "2026-10-25",
+      "status": "programado"
+    }
+  ],
+  "lyftGoal": {
+    "weekLabel": "Semana del 12 al 18 de octubre",
+    "target": 180,
+    "minimum": 150,
+    "current": 112,
+    "currency": "USD"
+  },
+  "clipping": {
+    "weekLabel": "Semana del 12 al 18 de octubre",
+    "clipsThisWeek": 14,
+    "inQueue": 5,
+    "published": 9,
+    "earnings": 128.5,
+    "currency": "USD",
+    "bots": [
+      {
+        "name": "Bot de cortes",
+        "state": "running",
+        "detail": "Armando los clips de esta semana"
+      },
+      {
+        "name": "Bot de cola",
+        "state": "idle",
+        "detail": "Cinco clips esperan revisión"
+      },
+      {
+        "name": "Bot de publicación",
+        "state": "error",
+        "detail": "No se pudo publicar el último clip"
+      }
+    ]
+  },
+  "bots": [
+    {
+      "name": "Monitor de turnos",
+      "state": "running",
+      "detail": "Revisando la actividad de Lyft"
+    },
+    {
+      "name": "Conciliador",
+      "state": "idle",
+      "detail": "En espera del próximo ciclo de saldo"
+    },
+    {
+      "name": "Alertas de pagos",
+      "state": "error",
+      "detail": "No se pudo leer el calendario"
+    }
+  ],
+  "systems": [
+    { "name": "TV cuarto", "state": "active", "detail": "Activo" },
+    { "name": "Voz Jarvis", "state": "active", "detail": "Activo" },
+    { "name": "Meta Lyft", "state": "info", "detail": "$180" },
+    { "name": "Clima LV", "state": "info", "detail": "87° nublado" }
+  ],
+  "voice": {
+    "label": "Voz Jarvis",
+    "locale": "ES-MX",
+    "levels": [0.35, 0.62, 0.48, 0.8, 0.42, 0.7, 0.55, 0.9, 0.38, 0.66, 0.5, 0.74, 0.44, 0.86, 0.58, 0.4, 0.72, 0.52, 0.68, 0.46, 0.78, 0.36, 0.6, 0.5]
+  },
+  "weather": {
+    "city": "Las Vegas",
+    "latitude": 36.17,
+    "longitude": -115.14,
+    "temp": 87,
+    "unit": "F",
+    "high": 87,
+    "low": 68,
+    "condition": "Nublado al mediodía",
+    "rainChance": 57,
+    "rainWhen": "9 p. m.",
+    "hourly": [
+      { "time": "6 a. m.", "temp": 70, "condition": "despejado", "rain": 0 },
+      { "time": "9 a. m.", "temp": 80, "condition": "nublado", "rain": 0 },
+      { "time": "12 p. m.", "temp": 87, "condition": "nublado", "rain": 0 },
+      { "time": "3 p. m.", "temp": 86, "condition": "nublado", "rain": 0 },
+      { "time": "6 p. m.", "temp": 83, "condition": "lluvia", "rain": 17 },
+      { "time": "9 p. m.", "temp": 75, "condition": "lluvia", "rain": 57 }
+    ]
+  },
+  "events": [
+    {
+      "time": "7:00 p. m.",
+      "title": "Golden Knights vs. LA Kings",
+      "place": "T-Mobile Arena · Fan Fest 4–6 p. m."
+    },
+    {
+      "time": "8:00 p. m.",
+      "title": "Josh Groban",
+      "place": "The Colosseum at Caesars Palace"
+    },
+    {
+      "time": "8:30 p. m.",
+      "title": "Metallica",
+      "place": "Sphere",
+      "note": "agotado"
+    }
+  ],
+  "notices": [
+    { "text": "Hoy se cobra Tesla desde Lyft Direct", "tone": "info" },
+    { "text": "Lluvia 57% a las 9 p. m.", "tone": "weather" },
+    { "text": "Fan Fest VGK 4–6 p. m. — Paramount+ Plaza", "tone": "event" }
+  ]
+}
